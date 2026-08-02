@@ -241,15 +241,11 @@ with st.sidebar:
 
 
 
-        st.success(
-            "PDF uploaded successfully ✅"
-        )
+st.success(
+    "PDF uploaded successfully ✅"
+)
 
-
-        st.cache_resource.clear()
-
-
-        st.rerun()
+st.cache_resource.clear()
 
 
 
