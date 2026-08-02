@@ -1,4 +1,4 @@
-# PART 1
+
 
 import os
 import shutil
