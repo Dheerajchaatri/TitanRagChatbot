@@ -269,7 +269,7 @@ with st.sidebar:
 
 
 
-    st.divider()
+    st.rerun()
 
 
 
