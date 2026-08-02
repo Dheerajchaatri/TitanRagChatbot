@@ -1,7 +1,8 @@
 streamlit
 langchain
 langchain-community
-langchain-openai
+langchain-groq
+sentence-transformers
 chromadb
 tiktoken
 python-dotenv
