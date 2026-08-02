@@ -1,12 +1,7 @@
 import os
 import streamlit as st
 
-from langchain_community.document_loaders import (
-    DirectoryLoader,
-    TextLoader,
-    PyPDFLoader
-)
-
+from langchain_community.document_loaders import DirectoryLoader, TextLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_community.vectorstores import Chroma
 
@@ -24,7 +19,6 @@ from langchain.chains import (
 from langchain.chains.combine_documents import create_stuff_documents_chain
 
 
-
 # ---------------- PAGE CONFIG ----------------
 
 st.set_page_config(
@@ -35,50 +29,94 @@ st.set_page_config(
 )
 
 
-
-# ---------------- UI CSS ----------------
+# ---------------- CUSTOM UI ----------------
 
 st.markdown("""
 <style>
 
+/* Background */
 .stApp {
     background-color:#0e1117;
 }
 
 
-.stChatMessage {
+/* Heading */
+h1 {
+    color:white !important;
+}
 
-    background-color:#1e293b;
-    color:white;
-    border-radius:12px;
-    padding:10px;
+
+.stCaption {
+    color:#cbd5e1 !important;
+}
+
+
+/* Chat bubbles */
+[data-testid="stChatMessage"] {
+
+    background-color:#1e293b !important;
+    border-radius:14px;
+    padding:12px;
 
 }
 
 
-.stChatMessage p {
+/* Chat text */
+[data-testid="stChatMessage"] p {
 
     color:white !important;
+    font-size:16px;
 
 }
 
 
+/* User input box */
+[data-testid="stChatInput"] {
+
+    background-color:#1e293b !important;
+    border:1px solid #475569 !important;
+    border-radius:14px;
+
+}
+
+
+/* Input typed text */
 [data-testid="stChatInput"] textarea {
 
     color:white !important;
+    caret-color:white !important;
+    font-size:16px !important;
 
 }
 
 
-[data-testid="stChatInput"] {
+/* Placeholder */
+[data-testid="stChatInput"] textarea::placeholder {
 
-    background-color:#1e293b;
+    color:#94a3b8 !important;
+
+}
+
+
+/* Send button */
+[data-testid="stChatInputSubmitButton"] button {
+
+    background:#ff5b5b !important;
+    color:white !important;
+    border-radius:10px;
+
+}
+
+
+/* Sidebar */
+section[data-testid="stSidebar"] {
+
+    background:#111827;
 
 }
 
 
 </style>
-
 """, unsafe_allow_html=True)
 
 
@@ -88,7 +126,6 @@ st.title("⚡ My Digital Twin Chatbot")
 st.caption(
     "A RAG-powered assistant trained to talk, think, and respond just like me."
 )
-
 
 
 
@@ -105,89 +142,28 @@ except:
 
 
 
-
 with st.sidebar:
-
 
     st.header("⚙️ Configuration")
 
 
     if secret_groq_key:
 
-        st.success(
-            "Groq API loaded 🔒"
-        )
+        st.success("Groq API loaded 🔒")
 
         api_key = secret_groq_key
 
 
     else:
 
-
         api_key = st.text_input(
-
             "Groq API Key",
-
             type="password",
-
             placeholder="gsk_..."
-
         )
-
-
-
-    # -------- PDF UPLOAD --------
 
 
     st.divider()
-
-
-    st.subheader("📄 Upload Knowledge PDF")
-
-
-    uploaded_pdf = st.file_uploader(
-
-        "Upload PDF",
-
-        type=["pdf"]
-
-    )
-
-
-    if uploaded_pdf:
-
-
-        upload_folder = "data/uploads"
-
-
-        os.makedirs(
-
-            upload_folder,
-
-            exist_ok=True
-
-        )
-
-
-        pdf_location = f"{upload_folder}/{uploaded_pdf.name}"
-
-
-
-        with open(pdf_location,"wb") as f:
-
-            f.write(
-                uploaded_pdf.getbuffer()
-            )
-
-
-        st.success(
-            "PDF uploaded successfully!"
-        )
-
-
-
-    st.divider()
-
 
 
     persona_instructions = st.text_area(
@@ -195,12 +171,10 @@ with st.sidebar:
         "Persona Rules",
 
         value="""
-
 1. Speak casually with confidence.
 2. Keep answers concise.
 3. Use natural language.
 4. Use retrieved context when answering.
-
 """,
 
         height=150
@@ -209,78 +183,52 @@ with st.sidebar:
 
 
 
-
 if not api_key:
 
-
     st.info(
-
         "Add your Groq API key in sidebar or Streamlit secrets.",
-
         icon="🔑"
-
     )
 
-
     st.stop()
-
-
 
 
 
 # ---------------- VECTOR DATABASE ----------------
 
 
-
-@st.cache_resource(
-    show_spinner="Building knowledge base..."
-)
+@st.cache_resource(show_spinner="Building knowledge base...")
 
 
 def initialize_vector_store():
 
 
-    data_path = "./data"
-
-    pdf_path = "./data/uploads"
-
-    db_path = "./chroma_db"
+    data_path="./data"
+    db_path="./chroma_db"
 
 
 
-    os.makedirs(
-        data_path,
-        exist_ok=True
-    )
+    if not os.path.exists(data_path):
 
-
-    os.makedirs(
-        pdf_path,
-        exist_ok=True
-    )
+        os.makedirs(data_path)
 
 
 
-    if not os.listdir(data_path):
+    files=os.listdir(data_path)
 
+
+
+    if not files:
 
         with open(
-
             f"{data_path}/about_me.txt",
-
             "w",
-
             encoding="utf-8"
-
         ) as f:
 
-
             f.write(
-
                 "I am an innovative developer passionate about AI, automation and modern web applications."
-
             )
-
 
 
 
@@ -291,9 +239,6 @@ def initialize_vector_store():
     )
 
 
-
-
-    # If database already exists
 
     if os.path.exists(db_path):
 
@@ -307,16 +252,7 @@ def initialize_vector_store():
         )
 
 
-
     else:
-
-
-
-        documents = []
-
-
-
-        # TXT files
 
 
         loader = DirectoryLoader(
@@ -328,49 +264,13 @@ def initialize_vector_store():
             loader_cls=TextLoader,
 
             loader_kwargs={
-
                 "encoding":"utf-8"
-
             }
 
         )
 
 
-
-        documents.extend(
-
-            loader.load()
-
-        )
-
-
-
-
-        # PDF files
-
-
-        if os.path.exists(pdf_path):
-
-
-            for file in os.listdir(pdf_path):
-
-
-                if file.endswith(".pdf"):
-
-
-                    pdf_loader = PyPDFLoader(
-
-                        f"{pdf_path}/{file}"
-
-                    )
-
-
-                    documents.extend(
-
-                        pdf_loader.load()
-
-                    )
-
+        documents = loader.load()
 
 
 
@@ -383,12 +283,7 @@ def initialize_vector_store():
         )
 
 
-
-        splits = splitter.split_documents(
-
-            documents
-
-        )
+        splits = splitter.split_documents(documents)
 
 
 
@@ -404,17 +299,11 @@ def initialize_vector_store():
 
 
 
-
     return vectorstore.as_retriever(
 
-        search_kwargs={
-
-            "k":3
-
-        }
+        search_kwargs={"k":3}
 
     )
-
 
 
 
@@ -422,10 +311,7 @@ retriever = initialize_vector_store()
 
 
 
-
-
 # ---------------- GROQ MODEL ----------------
-
 
 
 llm = ChatGroq(
@@ -440,45 +326,30 @@ llm = ChatGroq(
 
 
 
-
-
-
-# ---------------- RAG CHAIN ----------------
-
+# ---------------- RAG ----------------
 
 
 contextualize_prompt = ChatPromptTemplate.from_messages([
 
-
     (
-
         "system",
 
         """
-
-Given the chat history and latest user question,
-rewrite the question so it can be understood independently.
-
+Given chat history and latest question,
+rewrite the question clearly.
 """
-
     ),
-
 
     MessagesPlaceholder(
         "chat_history"
     ),
 
-
     (
-
         "human",
-
         "{input}"
-
     )
 
 ])
-
 
 
 
@@ -494,18 +365,16 @@ history_retriever = create_history_aware_retriever(
 
 
 
-
-
 system_prompt = """
 
 You are a digital twin.
 
-Follow these personality rules:
+Follow these rules:
 
 {persona_instructions}
 
 
-Use this retrieved knowledge:
+Use this knowledge:
 
 {context}
 
@@ -513,34 +382,21 @@ Use this retrieved knowledge:
 
 
 
-
-
 qa_prompt = ChatPromptTemplate.from_messages([
 
-
     (
-
         "system",
-
         system_prompt
-
     ),
-
 
     MessagesPlaceholder(
         "chat_history"
     ),
 
-
     (
-
         "human",
-
         "{input}"
-
     )
-
-
 
 ]).partial(
 
@@ -550,9 +406,7 @@ qa_prompt = ChatPromptTemplate.from_messages([
 
 
 
-
-
-qa_chain = create_stuff_documents_chain(
+qa_chain=create_stuff_documents_chain(
 
     llm,
 
@@ -562,9 +416,7 @@ qa_chain = create_stuff_documents_chain(
 
 
 
-
-
-rag_chain = create_retrieval_chain(
+rag_chain=create_retrieval_chain(
 
     history_retriever,
 
@@ -574,120 +426,70 @@ rag_chain = create_retrieval_chain(
 
 
 
-
-
-
-# ---------------- CHAT MEMORY ----------------
-
+# ---------------- MEMORY ----------------
 
 
 if "chat_history" not in st.session_state:
 
-
     st.session_state.chat_history=[]
-
-
 
 
 
 for msg in st.session_state.chat_history:
 
 
-    role = (
-
-        "user"
-
-        if isinstance(msg,HumanMessage)
-
-        else "assistant"
-
-    )
+    role="user" if isinstance(msg,HumanMessage) else "assistant"
 
 
     with st.chat_message(role):
 
-        st.write(
-            msg.content
-        )
-
-
-
+        st.write(msg.content)
 
 
 
 # ---------------- CHAT ----------------
 
 
-
-if user_query := st.chat_input(
-
-    "Ask me anything..."
-
-):
+if user_query := st.chat_input("Ask me anything..."):
 
 
     with st.chat_message("user"):
 
-
-        st.write(
-            user_query
-        )
-
+        st.write(user_query)
 
 
 
     with st.chat_message("assistant"):
 
 
-        with st.spinner(
-
-            "Thinking..."
-
-        ):
-
+        with st.spinner("Thinking..."):
 
 
             response = rag_chain.invoke({
 
-
                 "input":user_query,
-
 
                 "chat_history":st.session_state.chat_history
 
-
             })
-
 
 
             answer=response["answer"]
 
 
-
-            st.write(
-
-                answer
-
-            )
-
-
+            st.write(answer)
 
 
 
     st.session_state.chat_history.append(
 
-        HumanMessage(
-            content=user_query
-        )
+        HumanMessage(content=user_query)
 
     )
 
 
-
     st.session_state.chat_history.append(
 
-        AIMessage(
-            content=answer
-        )
+        AIMessage(content=answer)
 
     )
