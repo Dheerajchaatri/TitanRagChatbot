@@ -11,7 +11,7 @@ from langchain_core.messages import HumanMessage, AIMessage
 
 # --- PAGE CONFIGURATION ---
 st.set_page_config(
-    page_title="My Persona AI",
+    page_title="Titan Chatbot",
     page_icon="🤖",
     layout="centered",
     initial_sidebar_state="expanded"
@@ -109,7 +109,7 @@ qa_prompt = ChatPromptTemplate.from_messages([
     ("system", system_prompt),
     MessagesPlaceholder("chat_history"),
     ("human", "{input}"),
-])
+]).partial(persona_instructions=persona_instructions)
 
 question_answer_chain = create_stuff_documents_chain(llm, qa_prompt)
 rag_chain = create_retrieval_chain(history_aware_retriever, question_answer_chain)
@@ -133,8 +133,7 @@ if user_query := st.chat_input("Ask me anything..."):
         with st.spinner("Thinking..."):
             response = rag_chain.invoke({
                 "input": user_query,
-                "chat_history": st.session_state.chat_history,
-                "persona_instructions": persona_instructions
+                "chat_history": st.session_state.chat_history
             })
             
             answer = response["answer"]
