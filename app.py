@@ -318,7 +318,7 @@ if not api_key:
 
     st.stop()
 
-# PART 2
+
 
 
 # ================= VECTOR DATABASE =================
