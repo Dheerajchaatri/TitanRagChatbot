@@ -1,0 +1,160 @@
+====================================================================
+Saylani Mass IT Training (SMIT) Official Knowledge Base
+====================================================================
+
+--- GENERAL OVERVIEW ---
+
+Q: What is SMIT?
+A: SMIT stands for Saylani Mass IT Training, an educational initiative by Saylani Welfare International Trust aimed at providing free or highly affordable world-class IT education to Pakistan's youth.
+
+Q: What is the primary vision of Saylani Mass IT Training (SMIT)?
+A: The vision of SMIT is to empower 10 million IT experts to drive Pakistan's $100 billion digital economy through cutting-edge technology education, freelancing, and entrepreneurship.
+
+Q: Who operates and manages SMIT?
+A: SMIT is managed and operated by the Saylani Welfare International Trust, one of Pakistan's largest non-governmental organizations (NGOs).
+
+Q: Are the courses offered by Saylani Mass IT Training free of cost?
+A: Yes, most courses at SMIT are offered completely free of cost or at token/affordable fee structures to support underprivileged and deserving students.
+
+Q: What is the official website of Saylani Mass IT Training?
+A: The official website of SMIT is https://www.saylanimit.com/.
+
+Q: What is the employment success rate of SMIT graduates?
+A: SMIT boasts a 70% employment and freelancing success rate among its trained graduates.
+
+Q: How many startups have been launched through SMIT guidance?
+A: Over 150+ startups have been globally launched by alumni trained at Saylani Mass IT Training.
+
+Q: Is SMIT recognized by international tech organizations?
+A: Yes, SMIT is recognized by Cisco Academy and collaborates with various global tech leaders to align its curriculum with market demands.
+
+Q: What learning methodology does SMIT follow?
+A: SMIT focuses on hands-on practical training, real-world industry projects, and job-oriented skills rather than theoretical learning alone.
+
+Q: Who can apply for SMIT IT courses?
+A: Students, job seekers, beginners, and tech enthusiasts looking to build a career in IT, software development, design, networking, or AI can apply, subject to course eligibility rules.
+
+--- COURSES & PROGRAMS ---
+
+Q: What categories of courses are offered at SMIT?
+A: SMIT offers courses across Web & App Development, Artificial Intelligence & Data Science, Designing & Multimedia, Networking & Cybersecurity, Vocational Skills, and Office Automation.
+
+Q: What is the duration of the Mobile App Development with Flutter course?
+A: The Mobile App Development with Flutter course duration ranges between 10 to 12 months depending on the batch schedule.
+
+Q: What is taught in the DevOps Engineer program?
+A: The DevOps Engineer program spans 9 months and covers CI/CD pipelines, Docker, Kubernetes, cloud platforms (AWS/Azure), infrastructure as code, and automated deployment.
+
+Q: Does SMIT offer courses in Artificial Intelligence and Generative AI?
+A: Yes, SMIT offers specialized programs in Generative AI, Agentic AI, Chatbot Development, and AI & Data Science.
+
+Q: What is the duration of the Graphic Designing with AI course?
+A: The Graphic Designing with AI course is a 6-month commercial-oriented program covering design principles alongside modern AI generative tools.
+
+Q: How long is the Video Content Creation and Video Animation course?
+A: The Video Content Creation and Video Animation with AI course lasts for 4 months, covering audio-video editing, motion graphics, and AI rendering tools.
+
+Q: Does SMIT offer UI/UX design courses?
+A: Yes, SMIT offers UI/UX Design with AI, teaching wireframing, prototyping, user research, and interface design with Figma.
+
+Q: What networking certifications can students prepare for at SMIT?
+A: SMIT provides Cisco Certified Support Technician (CCST), Networking Essentials, Cybersecurity Essentials, and SOC Analyst CyberOps training.
+
+Q: Does SMIT have courses specifically for kids and young students?
+A: Yes, SMIT runs special short programs like 'Little Geniuses: Coding' and 'AI & Game Creators' (2 months) tailored for kids and teenagers.
+
+Q: What is taught in the Freelancing course?
+A: The 2-month Freelancing course covers profile setup, proposal writing, order management, client communication, and gig ranking on platforms like Fiverr and Upwork.
+
+Q: What is included in the Office Automation course?
+A: The 3-month Office Automation course covers computer basics, MS Office (Word, Excel, PowerPoint), email etiquette, web browsing, and digital document management.
+
+Q: What is covered in the Digital Marketing with AI program?
+A: The Digital Marketing with AI program is 5 months long and covers SEO, social media marketing (SMM), Google Ads, email marketing, and AI tools for content generation.
+
+Q: Does SMIT offer Game Development?
+A: Yes, SMIT offers a 6-month Game Development course covering Unity/Unreal Engine, 2D/3D game mechanics, and C# scripting.
+
+Q: Does SMIT provide vocational or technical trade training?
+A: Yes, SMIT offers vocational courses including Domestic Electrician, Plumber Technician, Health Safety & Environment (HSE), and Fire Alarm System Installation.
+
+Q: Is there an English Language proficiency course at SMIT?
+A: Yes, SMIT offers a 3-month English Language Course designed to improve communication, spoken fluency, and professional workplace English.
+
+--- ADMISSION & ENROLLMENT ---
+
+Q: How can I enroll in a course at SMIT?
+A: You can enroll online by visiting https://www.saylanimit.com/, clicking on 'Enroll Now', filling out the online application form, and selecting your preferred city and course.
+
+Q: Is there an entry test for SMIT admission?
+A: Yes, most IT and technical courses at SMIT require passing an entry test that evaluates basic computer knowledge, analytical aptitude, and basic English skills.
+
+Q: How do I check my SMIT Entry Test status?
+A: You can check your Entry Test status on the SMIT portal at https://www.saylanimit.com/ by selecting 'Entry Test Status' and providing your CNIC / Registration ID.
+
+Q: What documents are required during registration?
+A: You generally need a copy of your CNIC/B-Form, educational certificates, recent passport-size photograph, and father's/guardian's CNIC copy.
+
+Q: How will I know if admissions are currently open?
+A: Active admissions display an 'ADMISSION OPEN' tag on the official SMIT website homepage and Saylani's official social media channels.
+
+Q: Can women / female candidates apply for SMIT courses?
+A: Yes! Female candidates are strongly encouraged to apply. SMIT has dedicated batches and campus facilities for female students.
+
+Q: What is the minimum age requirement for SMIT courses?
+A: While age limits vary by course, general courses require candidates to be at least 14-16 years old. Kids' coding programs accept younger students (8-14 years).
+
+Q: Can I apply for multiple courses simultaneously?
+A: It is recommended to enroll in one core course at a time to maintain focus and dedication, though short non-conflicting workshops can be taken.
+
+Q: How are students selected after the entry test?
+A: Selection is merit-based, determined by Entry Test performance, academic background, and interview screening (if applicable).
+
+Q: What happens after getting selected?
+A: Selected candidates receive confirmation, download their SMIT Student ID Card from the portal, and attend the mandatory orientation session.
+
+--- STUDENT PORTAL & RULES ---
+
+Q: How can I download my SMIT Student ID Card?
+A: Go to https://www.saylanimit.com/, click on 'Download ID Card' in the menu/quick links, enter your Roll Number or CNIC, and download your printable card.
+
+Q: How can students check their examination results?
+A: Students can check their quiz and module results on the portal by navigating to the 'Check Results' section and entering their registration details.
+
+Q: Is attendance mandatory for SMIT classes?
+A: Yes, SMIT strictly enforces a minimum attendance requirement (usually 80-85%). Continuous absence without leave can lead to registration cancellation.
+
+Q: Are classes held online or physical?
+A: SMIT offers physical classes at various campuses across Pakistan, along with select online live streams for remote students.
+
+Q: Does SMIT issue certificates upon completion?
+A: Yes, students who successfully complete course modules, project assignments, and final exams receive an official certificate from Saylani Mass IT Training.
+
+Q: What happens if a student fails a module exam?
+A: Students are given a re-sit attempt or conditional opportunity to clear the backlog depending on trainer review and policy.
+
+Q: Is there a mobile app available for SMIT students?
+A: Yes, SMIT provides a mobile app on Google Play Store for students to access portal features, announcements, and results.
+
+--- CAMPUSES & SUPPORT ---
+
+Q: In which cities are SMIT campuses located?
+A: SMIT campuses are located in major cities across Pakistan, including Karachi, Islamabad, Rawalpindi, Lahore, Faisalabad, Hyderabad, Peshawar, Quetta, Gujranwala, Sukkur, and Lakki Marwat.
+
+Q: Where is the main Saylani Head Office / SMIT office located in Karachi?
+A: The main office is located at A-25, Bahadurabad Chowrangi, Karachi, Pakistan.
+
+Q: What is the official helpline phone number for SMIT?
+A: The official contact number for SMIT is +92 21 111 729 526.
+
+Q: What is the official email address for Saylani Mass IT Training?
+A: The official contact email is saylanimass@gmail.com.
+
+Q: Does SMIT provide job placement or internship assistance?
+A: Yes, SMIT has an active placement cell and job portal that connects top graduates with partner software houses and tech businesses.
+
+Q: Can students use laptop computers provided by SMIT during classes?
+A: Yes, SMIT campuses are equipped with state-of-the-art computer labs for students who do not own personal devices.
+
+Q: How can I find the nearest SMIT campus to my location?
+A: Visit https://www.saylanimit.com/, click on 'Campuses', select your city, and view detailed addresses and Google Map directions.
