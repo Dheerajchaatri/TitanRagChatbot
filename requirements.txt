@@ -9,9 +9,11 @@ langchain-huggingface==0.1.2
 
 sentence-transformers
 chromadb
-tiktoken
+
 pypdf
 
-python-dotenv
 torch
 torchvision
+
+python-dotenv
+tiktoken
