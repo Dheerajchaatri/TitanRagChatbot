@@ -567,7 +567,7 @@ def initialize_vector_store():
 
 retriever = initialize_vector_store()
 
-# PART 3
+
 
 
 # ================= GROQ MODEL =================
