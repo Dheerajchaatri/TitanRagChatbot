@@ -3,7 +3,8 @@ import streamlit as st
 from langchain_community.document_loaders import DirectoryLoader, TextLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_community.vectorstores import Chroma
-from langchain_openai import OpenAIEmbeddings, ChatOpenAI
+from langchain_groq import ChatGroq
+from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain.chains.history_aware_retriever import create_history_aware_retriever
 from langchain.chains.retrieval import create_retrieval_chain
@@ -37,9 +38,16 @@ st.title("⚡ My Digital Twin Chatbot")
 st.caption("A RAG-powered assistant trained to talk, think, and respond just like me.")
 
 # --- SIDEBAR & API KEY ---
+# Priority: Check Streamlit Secrets first, then fallback to sidebar input box
+secret_groq_key = st.secrets.get("GROQ_API_KEY", "")
+
 with st.sidebar:
     st.header("⚙️ Configuration")
-    api_key = st.text_input("OpenAI API Key", type="password")
+    if secret_groq_key:
+        st.success("Groq API Key loaded from Secrets! 🔒")
+        api_key = secret_groq_key
+    else:
+        api_key = st.text_input("Groq API Key", type="password", placeholder="gsk_...")
     
     st.markdown("---")
     st.subheader("📝 Persona Rules")
@@ -55,17 +63,14 @@ with st.sidebar:
     )
 
 if not api_key:
-    st.info("Please enter your OpenAI API key in the sidebar to get started.", icon="🗝️")
+    st.info("Please enter your Groq API key in the sidebar or add `GROQ_API_KEY` to Secrets to continue.", icon="🗝️")
     st.stop()
-
-os.environ["OPENAI_API_KEY"] = api_key
 
 # --- RAG INITIALIZATION & VECTOR STORE ---
 @st.cache_resource(show_spinner="Indexing knowledge base...")
 def initialize_vector_store():
     data_path = "./data"
     if not os.path.exists(data_path) or not os.listdir(data_path):
-        # Create default mock data if folder is empty
         os.makedirs(data_path, exist_ok=True)
         with open(f"{data_path}/about_me.txt", "w", encoding="utf-8") as f:
             f.write("I am an innovative developer passionate about AI, automation, and modern web apps.")
@@ -76,14 +81,19 @@ def initialize_vector_store():
     text_splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=50)
     splits = text_splitter.split_documents(docs)
     
-    embeddings = OpenAIEmbeddings(model="text-embedding-3-small")
+    # Free local embedding model (no API key needed for vector search)
+    embeddings = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
     vectorstore = Chroma.from_documents(documents=splits, embedding=embeddings)
     return vectorstore.as_retriever(search_kwargs={"k": 3})
 
 retriever = initialize_vector_store()
 
-# --- LLM & PROMPT PIPELINE ---
-llm = ChatOpenAI(model="gpt-4o-mini", temperature=0.7)
+# --- GROQ LLM & PROMPT PIPELINE ---
+llm = ChatGroq(
+    groq_api_key=api_key,
+    model_name="llama-3.3-70b-versatile",
+    temperature=0.7
+)
 
 # Context contextualization prompt
 contextualize_q_system_prompt = (
@@ -131,7 +141,7 @@ if user_query := st.chat_input("Ask me anything..."):
         st.markdown(user_query)
 
     with st.chat_message("assistant"):
-        with st.spinner("Thinking..."):
+        with st.spinner("Thinking (powered by Groq)..."):
             response = rag_chain.invoke({
                 "input": user_query,
                 "chat_history": st.session_state.chat_history
