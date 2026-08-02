@@ -1,12 +1,10 @@
-
-
 import os
 import shutil
 import streamlit as st
 
 from langchain_community.document_loaders import (
     TextLoader,
-    PyPDFLoader
+    PyPDFLoader,
 )
 
 from langchain_text_splitters import RecursiveCharacterTextSplitter
@@ -15,830 +13,418 @@ from langchain_community.vectorstores import Chroma
 from langchain_groq import ChatGroq
 from langchain_huggingface import HuggingFaceEmbeddings
 
-from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
-from langchain_core.messages import HumanMessage, AIMessage
+from langchain_core.prompts import (
+    ChatPromptTemplate,
+    MessagesPlaceholder,
+)
+
+from langchain_core.messages import (
+    HumanMessage,
+    AIMessage,
+)
 
 from langchain.chains import (
     create_history_aware_retriever,
-    create_retrieval_chain
+    create_retrieval_chain,
 )
 
-from langchain.chains.combine_documents import create_stuff_documents_chain
+from langchain.chains.combine_documents import (
+    create_stuff_documents_chain,
+)
 
 
-
-# ================= PAGE CONFIG =================
+# ===================================================
+# PAGE CONFIG
+# ===================================================
 
 st.set_page_config(
     page_title="Titan Chatbot",
     page_icon="🤖",
     layout="centered",
-    initial_sidebar_state="expanded"
+    initial_sidebar_state="expanded",
 )
 
 
+# ===================================================
+# CUSTOM CSS
+# ===================================================
 
-# ================= UI CSS =================
-
-st.markdown("""
+st.markdown(
+    """
 <style>
 
-.stApp {
-    background-color:#0e1117 !important;
+.stApp{
+    background:#0e1117;
+    color:white;
 }
 
-
-/* Title */
-
-h1 {
+h1,h2,h3,h4,h5,h6,p,label,span{
     color:white !important;
 }
 
-
-/* Caption */
-
-.stCaption {
-    color:#cbd5e1 !important;
+section[data-testid="stSidebar"]{
+    background:#111827;
 }
 
-
-/* Chat messages */
-
-[data-testid="stChatMessage"] {
-
-    background-color:#1e293b !important;
-
-    border-radius:14px !important;
-
-    padding:12px !important;
-
+[data-testid="stChatMessage"]{
+    background:#1e293b;
+    border-radius:15px;
+    padding:14px;
+    margin-bottom:10px;
 }
 
-
-[data-testid="stChatMessage"] p {
-
+[data-testid="stChatMessage"] p{
     color:white !important;
-
 }
 
-
-/* Chat input */
-
-[data-testid="stChatInput"] {
-
-    background-color:#111827 !important;
-
-    border:1px solid #475569 !important;
-
-    border-radius:14px !important;
-
-}
-
-
-[data-testid="stChatInput"] textarea {
-
-    background-color:#111827 !important;
-
-    color:white !important;
-
-    -webkit-text-fill-color:white !important;
-
-    caret-color:white !important;
-
-}
-
-
-[data-testid="stChatInput"] textarea::placeholder {
-
-    color:#94a3b8 !important;
-
-}
-
-
-/* Sidebar */
-
-section[data-testid="stSidebar"] {
-
+[data-testid="stChatInput"]{
     background:#111827 !important;
-
+    border:1px solid #334155;
+    border-radius:14px;
 }
 
+[data-testid="stChatInput"] textarea{
+    color:white !important;
+    background:#111827 !important;
+    -webkit-text-fill-color:white !important;
+    caret-color:white !important;
+}
+
+[data-testid="stChatInput"] textarea::placeholder{
+    color:#94a3b8 !important;
+}
+
+button{
+    border-radius:10px !important;
+}
 
 </style>
+""",
+    unsafe_allow_html=True,
+)
 
-""", unsafe_allow_html=True)
 
-
+# ===================================================
+# TITLE
+# ===================================================
 
 st.title("⚡ My Digital Twin Chatbot")
 
 st.caption(
-    "A RAG-powered assistant trained to talk, think, and respond just like me."
+    "A RAG-powered chatbot that can answer from TXT files and uploaded PDFs."
 )
 
 
-
-# ================= API KEY =================
-
+# ===================================================
+# API KEY
+# ===================================================
 
 try:
-
-    secret_groq_key = st.secrets["GROQ_API_KEY"]
-
+    api_key = st.secrets["GROQ_API_KEY"]
 except:
-
-    secret_groq_key = None
-
+    api_key = None
 
 
 with st.sidebar:
 
-
     st.header("⚙️ Configuration")
 
-
-
-    if secret_groq_key:
-
-
-        st.success(
-            "Groq API loaded 🔒"
-        )
-
-        api_key = secret_groq_key
-
-
-
+    if api_key:
+        st.success("Groq API Loaded ✅")
     else:
-
-
         api_key = st.text_input(
-
             "Groq API Key",
-
             type="password",
-
-            placeholder="gsk_..."
-
         )
-
-
 
     st.divider()
 
+    st.subheader("📄 Upload PDF")
 
-
-    # ================= PDF UPLOAD =================
-
-
-    st.subheader(
-        "📄 Upload Knowledge PDF"
+    uploaded_pdf = st.file_uploader(
+        "Choose PDF",
+        type=["pdf"],
     )
 
-
-    uploaded_file = st.file_uploader(
-
-        "Upload PDF file",
-
-        type=["pdf"]
-
-    )
-
-
-
-    if uploaded_file:
-
+    if uploaded_pdf is not None:
 
         upload_folder = "./data/uploads"
 
-
         os.makedirs(
-
             upload_folder,
-
-            exist_ok=True
-
+            exist_ok=True,
         )
-
-
 
         pdf_path = os.path.join(
-
             upload_folder,
-
-            uploaded_file.name
-
+            uploaded_pdf.name,
         )
 
+        with open(pdf_path, "wb") as f:
+            f.write(uploaded_pdf.getbuffer())
 
-
-        with open(
-
-            pdf_path,
-
-            "wb"
-
-        ) as f:
-
-
-            f.write(
-
-                uploaded_file.getbuffer()
-
-            )
-
-
-
-        # Remove old database so new PDF gets indexed
-
+        # delete previous database
         if os.path.exists("./chroma_db"):
-
             shutil.rmtree("./chroma_db")
 
-
+        st.success("PDF Uploaded Successfully ✅")
 
         st.cache_resource.clear()
 
+        st.rerun()
 
-
-        st.success(
-
-            "PDF uploaded successfully ✅"
-
-        )
-
-
-
-    st.rerun()
-
-
+    st.divider()
 
     persona_instructions = st.text_area(
-
-
         "Persona Rules",
-
-
         value="""
-
-
-1. Speak casually with confidence.
-
+1. Speak casually.
 2. Keep answers concise.
-
-3. Use natural language.
-
-4. Use retrieved context when answering.
-
-
+3. Use retrieved context.
+4. If answer isn't available, say you don't know.
 """,
-
-
-        height=150
-
-
+        height=170,
     )
 
-
-
-
-# Stop if API missing
 
 if not api_key:
 
-
-    st.info(
-
-        "Add your Groq API key in sidebar or Streamlit secrets.",
-
-        icon="🔑"
-
-    )
-
+    st.warning("Please enter your Groq API Key.")
 
     st.stop()
 
 
+# ===================================================
+# VECTOR DATABASE
+# ===================================================
 
-
-# ================= VECTOR DATABASE =================
-
-
-@st.cache_resource(show_spinner="Building knowledge base...")
-
-
+@st.cache_resource(show_spinner=False)
 def initialize_vector_store():
 
+    data_folder = "./data"
+    upload_folder = "./data/uploads"
+    db_folder = "./chroma_db"
 
-    data_path = "./data"
-
-    upload_path = "./data/uploads"
-
-    db_path = "./chroma_db"
-
-
-
-    # Create folders
-
-    os.makedirs(
-
-        data_path,
-
-        exist_ok=True
-
-    )
-
-
-    os.makedirs(
-
-        upload_path,
-
-        exist_ok=True
-
-    )
-
-
-
-    # Find existing files
-
-    documents_files = []
-
-
-
-    for root, dirs, files in os.walk(data_path):
-
-
-        for file in files:
-
-
-            if file.endswith(".txt") or file.endswith(".pdf"):
-
-
-                documents_files.append(
-
-                    os.path.join(root, file)
-
-                )
-
-
-
-    # If no file exists create default knowledge
-
-    if not documents_files:
-
-
-        default_file = os.path.join(
-
-            data_path,
-
-            "about_me.txt"
-
-        )
-
-
-        with open(
-
-            default_file,
-
-            "w",
-
-            encoding="utf-8"
-
-        ) as f:
-
-
-            f.write(
-
-                "I am an innovative developer passionate about AI, automation and modern web applications."
-
-            )
-
-
-
-        documents_files.append(default_file)
-
-
-
-
-
-    # Embeddings
-
+    os.makedirs(data_folder, exist_ok=True)
+    os.makedirs(upload_folder, exist_ok=True)
 
     embeddings = HuggingFaceEmbeddings(
-
         model_name="sentence-transformers/all-MiniLM-L6-v2"
-
     )
 
+    # -----------------------------
+    # Load Existing Database
+    # -----------------------------
 
-
-
-    # Load existing Chroma DB
-
-    if os.path.exists(db_path) and os.listdir(db_path):
-
+    if os.path.exists(db_folder) and len(os.listdir(db_folder)) > 0:
 
         vectorstore = Chroma(
-
-            persist_directory=db_path,
-
-            embedding_function=embeddings
-
+            persist_directory=db_folder,
+            embedding_function=embeddings,
         )
 
-
-
-    else:
-
-
-
-        documents = []
-
-
-
-        # Read files
-
-
-        for file_path in documents_files:
-
-
-
-            # TXT files
-
-            if file_path.endswith(".txt"):
-
-
-
-                loader = TextLoader(
-
-                    file_path,
-
-                    encoding="utf-8"
-
-                )
-
-
-                documents.extend(
-
-                    loader.load()
-
-                )
-
-
-
-
-            # PDF files
-
-
-            elif file_path.endswith(".pdf"):
-
-
-
-                loader = PyPDFLoader(
-
-                    file_path
-
-                )
-
-
-                documents.extend(
-
-                    loader.load()
-
-                )
-
-
-
-
-
-        # Split text into chunks
-
-
-        splitter = RecursiveCharacterTextSplitter(
-
-            chunk_size=500,
-
-            chunk_overlap=50
-
+        return vectorstore.as_retriever(
+            search_kwargs={"k": 4}
         )
 
+    # -----------------------------
+    # Build New Database
+    # -----------------------------
 
+    documents = []
 
-        splits = splitter.split_documents(
+    # TXT FILES
 
-            documents
+    for file in os.listdir(data_folder):
 
-        )
+        path = os.path.join(data_folder, file)
 
+        if file.endswith(".txt"):
 
+            loader = TextLoader(
+                path,
+                encoding="utf-8",
+            )
 
+            documents.extend(loader.load())
 
+    # PDF FILES
 
-        # Create vector database
+    for file in os.listdir(upload_folder):
 
+        path = os.path.join(upload_folder, file)
 
-        vectorstore = Chroma.from_documents(
+        if file.endswith(".pdf"):
 
-            documents=splits,
+            loader = PyPDFLoader(path)
 
-            embedding=embeddings,
+            documents.extend(loader.load())
 
-            persist_directory=db_path
+    if len(documents) == 0:
 
-        )
+        st.error("No TXT or PDF found inside data folder.")
 
+        st.stop()
 
-
-
-
-    return vectorstore.as_retriever(
-
-        search_kwargs={
-
-            "k":3
-
-        }
-
+    splitter = RecursiveCharacterTextSplitter(
+        chunk_size=600,
+        chunk_overlap=100,
     )
 
+    splits = splitter.split_documents(documents)
 
+    vectorstore = Chroma.from_documents(
+        documents=splits,
+        embedding=embeddings,
+        persist_directory=db_folder,
+    )
 
+    return vectorstore.as_retriever(
+        search_kwargs={"k": 4}
+    )
 
 
 retriever = initialize_vector_store()
 
 
-
-
-# ================= GROQ MODEL =================
-
+# ===================================================
+# GROQ MODEL
+# ===================================================
 
 llm = ChatGroq(
-
     groq_api_key=api_key,
-
     model_name="llama-3.3-70b-versatile",
-
-    temperature=0.7
-
+    temperature=0.4,
 )
 
-
-
-# ================= RAG PIPELINE =================
-
+# ===================================================
+# RAG PIPELINE
+# ===================================================
 
 contextualize_prompt = ChatPromptTemplate.from_messages([
-
-
     (
-
         "system",
-
-        """
-Given the chat history and latest user question,
-rewrite the question so it can be understood independently.
-Only use conversation context.
-"""
-
+        "Given the chat history and latest user question, rewrite it into a standalone question. Do not answer it."
     ),
-
-
-    MessagesPlaceholder(
-
-        "chat_history"
-
-    ),
-
-
-    (
-
-        "human",
-
-        "{input}"
-
-    )
-
+    MessagesPlaceholder("chat_history"),
+    ("human", "{input}"),
 ])
 
 
-
-
 history_retriever = create_history_aware_retriever(
-
     llm,
-
     retriever,
-
-    contextualize_prompt
-
+    contextualize_prompt,
 )
-
-
-
 
 
 system_prompt = """
+You are Titan AI.
 
-You are a helpful AI assistant.
+Answer ONLY from the retrieved context.
 
-Answer the user using only the provided knowledge context.
+If the answer is not present in the provided context,
+reply:
 
-If information is not available in the uploaded documents,
-clearly say that you don't have that information.
+"I couldn't find this information in the uploaded documents."
 
+Personality Rules:
 
-Personality rules:
+{persona}
 
-{persona_instructions}
-
-
-Knowledge context:
+Retrieved Context:
 
 {context}
-
 """
 
 
-
-
 qa_prompt = ChatPromptTemplate.from_messages([
-
-
-    (
-
-        "system",
-
-        system_prompt
-
-    ),
-
-
-    MessagesPlaceholder(
-
-        "chat_history"
-
-    ),
-
-
-    (
-
-        "human",
-
-        "{input}"
-
-    )
-
-
+    ("system", system_prompt),
+    MessagesPlaceholder("chat_history"),
+    ("human", "{input}"),
 ]).partial(
-
-    persona_instructions=persona_instructions
-
+    persona=persona_instructions
 )
 
 
-
-
-
-qa_chain = create_stuff_documents_chain(
-
+question_answer_chain = create_stuff_documents_chain(
     llm,
-
-    qa_prompt
-
+    qa_prompt,
 )
-
-
-
 
 
 rag_chain = create_retrieval_chain(
-
     history_retriever,
-
-    qa_chain
-
+    question_answer_chain,
 )
 
 
-
-
-
-# ================= CHAT MEMORY =================
-
+# ===================================================
+# CHAT MEMORY
+# ===================================================
 
 if "chat_history" not in st.session_state:
-
-
     st.session_state.chat_history = []
 
 
+# ===================================================
+# SHOW OLD CHAT
+# ===================================================
 
-
-
-# Show previous messages
-
-
-for msg in st.session_state.chat_history:
-
+for message in st.session_state.chat_history:
 
     role = (
-
         "user"
-
-        if isinstance(msg, HumanMessage)
-
+        if isinstance(message, HumanMessage)
         else "assistant"
-
     )
 
-
     with st.chat_message(role):
+        st.markdown(message.content)
 
 
-        st.write(msg.content)
+# ===================================================
+# CHAT INPUT
+# ===================================================
 
+user_prompt = st.chat_input(
+    "Ask anything from your uploaded PDF..."
+)
 
-
-
-
-# ================= CHAT INPUT =================
-
-
-if user_query := st.chat_input(
-
-    "Ask me anything..."
-
-):
-
-
-
-    # User message
-
+if user_prompt:
 
     with st.chat_message("user"):
-
-
-        st.write(user_query)
-
-
-
-
-
-    # AI response
-
+        st.markdown(user_prompt)
 
     with st.chat_message("assistant"):
 
-
         with st.spinner("Thinking..."):
 
+            try:
 
+                result = rag_chain.invoke(
+                    {
+                        "input": user_prompt,
+                        "chat_history": st.session_state.chat_history,
+                    }
+                )
 
-            response = rag_chain.invoke({
+                answer = result.get(
+                    "answer",
+                    "Sorry, I couldn't generate a response."
+                )
 
+            except Exception as e:
 
-                "input": user_query,
+                answer = f"❌ Error: {str(e)}"
 
-
-                "chat_history": st.session_state.chat_history
-
-
-            })
-
-
-
-            answer = response["answer"]
-
-
-
-            st.write(answer)
-
-
-
-
-
-    # Save chat history
-
+            st.markdown(answer)
 
     st.session_state.chat_history.append(
-
-        HumanMessage(
-
-            content=user_query
-
-        )
-
+        HumanMessage(content=user_prompt)
     )
-
-
 
     st.session_state.chat_history.append(
-
-        AIMessage(
-
-            content=answer
-
-        )
-
+        AIMessage(content=answer)
     )
+
