@@ -1,8 +1,12 @@
 import os
 import streamlit as st
 
-from langchain_community.document_loaders import DirectoryLoader, TextLoader
-from langchain_community.document_loaders import PyPDFLoader
+from langchain_community.document_loaders import (
+    DirectoryLoader,
+    TextLoader,
+    PyPDFLoader
+)
+
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_community.vectorstores import Chroma
 
@@ -20,7 +24,9 @@ from langchain.chains import (
 from langchain.chains.combine_documents import create_stuff_documents_chain
 
 
+
 # ================= PAGE CONFIG =================
+
 
 st.set_page_config(
     page_title="Titan Chatbot",
@@ -31,12 +37,13 @@ st.set_page_config(
 
 
 
-# ================= UI CSS FIX =================
+# ================= UI =================
+
 
 st.markdown("""
 <style>
 
-/* Background */
+/* App background */
 .stApp {
     background-color:#0e1117 !important;
 }
@@ -44,7 +51,7 @@ st.markdown("""
 
 /* Heading */
 h1 {
-    color:#ffffff !important;
+    color:white !important;
 }
 
 
@@ -54,7 +61,7 @@ h1 {
 }
 
 
-/* Chat messages */
+/* Chat bubbles */
 [data-testid="stChatMessage"] {
 
     background-color:#1e293b !important;
@@ -66,19 +73,16 @@ h1 {
 }
 
 
-/* Chat text */
 [data-testid="stChatMessage"] p {
 
-    color:#ffffff !important;
+    color:white !important;
 
 }
 
 
 
-/* ================= INPUT BOX ================= */
+/* Chat input */
 
-
-/* Outer box */
 [data-testid="stChatInput"] {
 
     background-color:#111827 !important;
@@ -91,7 +95,6 @@ h1 {
 
 
 
-/* Inner div */
 [data-testid="stChatInput"] > div {
 
     background-color:#111827 !important;
@@ -100,22 +103,20 @@ h1 {
 
 
 
-/* Actual textarea */
 [data-testid="stChatInput"] textarea {
 
     background-color:#111827 !important;
 
-    color:#ffffff !important;
+    color:white !important;
 
-    -webkit-text-fill-color:#ffffff !important;
+    -webkit-text-fill-color:white !important;
 
-    caret-color:#ffffff !important;
+    caret-color:white !important;
 
 }
 
 
 
-/* Placeholder */
 [data-testid="stChatInput"] textarea::placeholder {
 
     color:#94a3b8 !important;
@@ -123,28 +124,29 @@ h1 {
 }
 
 
-
 /* Send button */
+
 [data-testid="stChatInputSubmitButton"] button {
 
-    background-color:#ff5b5b !important;
+    background:#ff5b5b !important;
 
     color:white !important;
-
-    border-radius:10px !important;
 
 }
 
 
 
 /* Sidebar */
+
 section[data-testid="stSidebar"] {
 
     background:#111827 !important;
 
 }
 
+
 </style>
+
 """, unsafe_allow_html=True)
 
 
@@ -154,6 +156,7 @@ st.title("⚡ My Digital Twin Chatbot")
 st.caption(
     "A RAG-powered assistant trained to talk, think, and respond just like me."
 )
+
 
 
 
@@ -176,6 +179,7 @@ with st.sidebar:
     st.header("⚙️ Configuration")
 
 
+
     if secret_groq_key:
 
         st.success("Groq API loaded 🔒")
@@ -192,7 +196,65 @@ with st.sidebar:
         )
 
 
+
     st.divider()
+
+
+
+    # ================= PDF UPLOAD =================
+
+
+    st.subheader("📄 Upload Knowledge PDF")
+
+
+    uploaded_file = st.file_uploader(
+        "Upload PDF file",
+        type=["pdf"]
+    )
+
+
+    if uploaded_file:
+
+
+        upload_folder = "./data/uploads"
+
+
+        os.makedirs(
+            upload_folder,
+            exist_ok=True
+        )
+
+
+
+        pdf_path = os.path.join(
+            upload_folder,
+            uploaded_file.name
+        )
+
+
+
+        with open(pdf_path, "wb") as f:
+
+            f.write(
+                uploaded_file.getbuffer()
+            )
+
+
+
+        st.success(
+            "PDF uploaded successfully ✅"
+        )
+
+
+        st.cache_resource.clear()
+
+
+        st.rerun()
+
+
+
+    st.divider()
+
 
 
     persona_instructions = st.text_area(
@@ -200,10 +262,12 @@ with st.sidebar:
         "Persona Rules",
 
         value="""
+
 1. Speak casually with confidence.
 2. Keep answers concise.
 3. Use natural language.
 4. Use retrieved context when answering.
+
 """,
 
         height=150
@@ -212,16 +276,17 @@ with st.sidebar:
 
 
 
+
 if not api_key:
+
 
     st.info(
         "Add your Groq API key in sidebar or Streamlit secrets.",
         icon="🔑"
     )
 
+
     st.stop()
-
-
 
 # ================= VECTOR DATABASE =================
 
@@ -232,29 +297,64 @@ if not api_key:
 def initialize_vector_store():
 
 
-    data_path="./data"
+    data_path = "./data"
 
-    db_path="./chroma_db"
+    upload_path = "./data/uploads"
 
-
-
-    if not os.path.exists(data_path):
-
-        os.makedirs(data_path)
+    db_path = "./chroma_db"
 
 
 
-    if not os.listdir(data_path):
+    # Create folders if missing
+
+    os.makedirs(
+        data_path,
+        exist_ok=True
+    )
+
+
+    os.makedirs(
+        upload_path,
+        exist_ok=True
+    )
+
+
+
+    # Default file if no knowledge exists
+
+    all_files = []
+
+
+    for root, dirs, files in os.walk(data_path):
+
+        for file in files:
+
+            all_files.append(
+                os.path.join(root,file)
+            )
+
+
+
+    if not all_files:
+
 
         with open(
+
             f"{data_path}/about_me.txt",
+
             "w",
+
             encoding="utf-8"
+
         ) as f:
 
+
             f.write(
+
                 "I am an innovative developer passionate about AI, automation and modern web applications."
+
             )
+
 
 
 
@@ -266,7 +366,11 @@ def initialize_vector_store():
 
 
 
+
+    # Load existing database
+
     if os.path.exists(db_path):
+
 
         vectorstore = Chroma(
 
@@ -280,23 +384,67 @@ def initialize_vector_store():
     else:
 
 
-        loader = DirectoryLoader(
 
-            data_path,
-
-            glob="*.txt",
-
-            loader_cls=TextLoader,
-
-            loader_kwargs={
-                "encoding":"utf-8"
-            }
-
-        )
+        documents = []
 
 
-        documents = loader.load()
 
+        # Read TXT files
+
+        for root, dirs, files in os.walk(data_path):
+
+
+            for file in files:
+
+
+
+                file_path = os.path.join(
+                    root,
+                    file
+                )
+
+
+
+                if file.endswith(".txt"):
+
+
+                    loader = TextLoader(
+
+                        file_path,
+
+                        encoding="utf-8"
+
+                    )
+
+
+                    documents.extend(
+                        loader.load()
+                    )
+
+
+
+                # Read PDF files
+
+                elif file.endswith(".pdf"):
+
+
+                    loader = PyPDFLoader(
+
+                        file_path
+
+                    )
+
+
+                    documents.extend(
+
+                        loader.load()
+
+                    )
+
+
+
+
+        # Split documents
 
 
         splitter = RecursiveCharacterTextSplitter(
@@ -309,7 +457,12 @@ def initialize_vector_store():
 
 
 
-        splits = splitter.split_documents(documents)
+        splits = splitter.split_documents(
+
+            documents
+
+        )
+
 
 
 
@@ -327,9 +480,14 @@ def initialize_vector_store():
 
     return vectorstore.as_retriever(
 
-        search_kwargs={"k":3}
+        search_kwargs={
+
+            "k":3
+
+        }
 
     )
+
 
 
 
@@ -350,30 +508,42 @@ llm = ChatGroq(
 
 
 
-# ================= RAG CHAIN =================
+# ================= RAG PIPELINE =================
 
 
 contextualize_prompt = ChatPromptTemplate.from_messages([
 
+
     (
+
         "system",
 
         """
 Given the chat history and latest user question,
 rewrite the question so it can be understood independently.
+Only use the conversation context.
 """
+
     ),
+
 
     MessagesPlaceholder(
+
         "chat_history"
+
     ),
 
+
     (
+
         "human",
+
         "{input}"
+
     )
 
 ])
+
 
 
 
@@ -389,16 +559,23 @@ history_retriever = create_history_aware_retriever(
 
 
 
+
+
 system_prompt = """
 
-You are a digital twin.
+You are a helpful AI assistant.
 
-Follow these personality rules:
+Answer the user using only the provided knowledge context.
+
+If the answer is not available in the uploaded documents,
+say that you don't have information about it.
+
+Personality rules:
 
 {persona_instructions}
 
 
-Use this retrieved knowledge:
+Knowledge context:
 
 {context}
 
@@ -406,27 +583,45 @@ Use this retrieved knowledge:
 
 
 
+
 qa_prompt = ChatPromptTemplate.from_messages([
 
+
+
     (
+
         "system",
+
         system_prompt
+
     ),
+
+
 
     MessagesPlaceholder(
+
         "chat_history"
+
     ),
 
+
+
     (
+
         "human",
+
         "{input}"
+
     )
+
+
 
 ]).partial(
 
     persona_instructions=persona_instructions
 
 )
+
 
 
 
@@ -440,6 +635,7 @@ qa_chain = create_stuff_documents_chain(
 
 
 
+
 rag_chain = create_retrieval_chain(
 
     history_retriever,
@@ -450,18 +646,25 @@ rag_chain = create_retrieval_chain(
 
 
 
+
+
 # ================= CHAT MEMORY =================
 
 
 if "chat_history" not in st.session_state:
 
+
     st.session_state.chat_history = []
 
 
 
-# Show previous messages
+
+
+# Display old messages
+
 
 for msg in st.session_state.chat_history:
+
 
 
     role = (
@@ -475,61 +678,88 @@ for msg in st.session_state.chat_history:
     )
 
 
+
     with st.chat_message(role):
 
+
         st.write(msg.content)
+
+
 
 
 
 # ================= CHAT INPUT =================
 
 
-if user_query := st.chat_input("Ask me anything..."):
+if user_query := st.chat_input(
 
+    "Ask me anything..."
 
-    # User message
+):
+
 
     with st.chat_message("user"):
+
 
         st.write(user_query)
 
 
 
-    # AI response
+
 
     with st.chat_message("assistant"):
+
 
 
         with st.spinner("Thinking..."):
 
 
+
             response = rag_chain.invoke({
+
 
                 "input": user_query,
 
+
                 "chat_history": st.session_state.chat_history
+
 
             })
 
 
+
             answer = response["answer"]
+
+
 
 
             st.write(answer)
 
 
 
-    # Save memory
+
+
+    # Save messages
+
 
     st.session_state.chat_history.append(
 
-        HumanMessage(content=user_query)
+        HumanMessage(
+
+            content=user_query
+
+        )
 
     )
 
 
+
     st.session_state.chat_history.append(
 
-        AIMessage(content=answer)
+        AIMessage(
+
+            content=answer
+
+        )
 
     )
