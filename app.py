@@ -365,16 +365,9 @@ def initialize_vector_store():
 
     # Load existing database
 
-    if os.path.exists(db_path):
-
-
-        vectorstore = Chroma(
-
-            persist_directory=db_path,
-
-            embedding_function=embeddings
-
-        )
+ if os.path.exists("./chroma_db"):
+    import shutil
+    shutil.rmtree("./chroma_db")
 
 
     else:
