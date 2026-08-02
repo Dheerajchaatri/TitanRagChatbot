@@ -1,19 +1,26 @@
 import os
 import streamlit as st
+
 from langchain_community.document_loaders import DirectoryLoader, TextLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_community.vectorstores import Chroma
+
 from langchain_groq import ChatGroq
 from langchain_huggingface import HuggingFaceEmbeddings
+
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
-
-# --- FIXED LANGCHAIN IMPORTS ---
-from langchain.chains import create_history_aware_retriever, create_retrieval_chain
-from langchain.chains.combine_documents import create_stuff_documents_chain
-
 from langchain_core.messages import HumanMessage, AIMessage
 
-# --- PAGE CONFIGURATION ---
+from langchain.chains import (
+    create_history_aware_retriever,
+    create_retrieval_chain
+)
+
+from langchain.chains.combine_documents import create_stuff_documents_chain
+
+
+# ---------------- PAGE CONFIG ----------------
+
 st.set_page_config(
     page_title="Titan Chatbot",
     page_icon="🤖",
@@ -21,137 +28,357 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Custom CSS for a sleek modern UI
+
 st.markdown("""
-    <style>
-    .stApp {
-        background-color: #0e1117;
-        color: #ffffff;
-    }
-    .stChatMessage {
-        border-radius: 12px;
-        padding: 10px;
-        margin-bottom: 10px;
-    }
-    </style>
+<style>
+.stApp {
+    background-color:#0e1117;
+    color:white;
+}
+
+.stChatMessage {
+    border-radius:12px;
+    padding:10px;
+}
+</style>
 """, unsafe_allow_html=True)
 
-st.title("⚡ My Digital Twin Chatbot")
-st.caption("A RAG-powered assistant trained to talk, think, and respond just like me.")
 
-# --- SIDEBAR & API KEY ---
-# Priority: Check Streamlit Secrets first, then fallback to sidebar input box
-secret_groq_key = st.secrets.get("GROQ_API_KEY", "")
+st.title("⚡ My Digital Twin Chatbot")
+st.caption(
+    "A RAG-powered assistant trained to talk, think, and respond just like me."
+)
+
+
+
+# ---------------- API KEY ----------------
+
+
+try:
+    secret_groq_key = st.secrets["GROQ_API_KEY"]
+except:
+    secret_groq_key = None
+
 
 with st.sidebar:
+
     st.header("⚙️ Configuration")
+
+
     if secret_groq_key:
-        st.success("Groq API Key loaded from Secrets! 🔒")
+
+        st.success("Groq API loaded 🔒")
         api_key = secret_groq_key
+
     else:
-        api_key = st.text_input("Groq API Key", type="password", placeholder="gsk_...")
-    
-    st.markdown("---")
-    st.subheader("📝 Persona Rules")
+
+        api_key = st.text_input(
+            "Groq API Key",
+            type="password",
+            placeholder="gsk_..."
+        )
+
+
+    st.divider()
+
+
     persona_instructions = st.text_area(
-        "Define your persona / speech habits:",
-        value=(
-            "1. Speak casually with confidence and a touch of wit.\n"
-            "2. Keep responses concise and directly address the query.\n"
-            "3. Use slang or phraseology natural to me.\n"
-            "4. If unsure about facts, answer grounded in the retrieved context."
-        ),
+        "Persona Rules",
+
+        value="""
+1. Speak casually with confidence.
+2. Keep answers concise.
+3. Use natural language.
+4. Use retrieved context when answering.
+""",
+
         height=150
     )
 
+
 if not api_key:
-    st.info("Please enter your Groq API key in the sidebar or add `GROQ_API_KEY` to Secrets to continue.", icon="🗝️")
+
+    st.info(
+        "Add your Groq API key in sidebar or Streamlit secrets.",
+        icon="🔑"
+    )
+
     st.stop()
 
-# --- RAG INITIALIZATION & VECTOR STORE ---
-@st.cache_resource(show_spinner="Indexing knowledge base...")
-def initialize_vector_store():
-    data_path = "./data"
-    if not os.path.exists(data_path) or not os.listdir(data_path):
-        os.makedirs(data_path, exist_ok=True)
-        with open(f"{data_path}/about_me.txt", "w", encoding="utf-8") as f:
-            f.write("I am an innovative developer passionate about AI, automation, and modern web apps.")
 
-    loader = DirectoryLoader(data_path, glob="./*.txt", loader_cls=TextLoader)
-    docs = loader.load()
-    
-    text_splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=50)
-    splits = text_splitter.split_documents(docs)
-    
-    # Free local embedding model (no API key needed for vector search)
-    embeddings = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
-    vectorstore = Chroma.from_documents(documents=splits, embedding=embeddings)
-    return vectorstore.as_retriever(search_kwargs={"k": 3})
+
+# ---------------- VECTOR DATABASE ----------------
+
+
+@st.cache_resource(show_spinner="Building knowledge base...")
+
+
+def initialize_vector_store():
+
+
+    data_path = "./data"
+    db_path = "./chroma_db"
+
+
+    if not os.path.exists(data_path):
+
+        os.makedirs(data_path)
+
+
+    files = os.listdir(data_path)
+
+
+    if not files:
+
+        with open(
+            f"{data_path}/about_me.txt",
+            "w",
+            encoding="utf-8"
+        ) as f:
+
+            f.write(
+                "I am an innovative developer passionate about AI, automation and modern web applications."
+            )
+
+
+    if os.path.exists(db_path):
+
+        embeddings = HuggingFaceEmbeddings(
+            model_name="sentence-transformers/all-MiniLM-L6-v2"
+        )
+
+
+        vectorstore = Chroma(
+            persist_directory=db_path,
+            embedding_function=embeddings
+        )
+
+
+    else:
+
+
+        loader = DirectoryLoader(
+            data_path,
+            glob="*.txt",
+            loader_cls=TextLoader,
+            loader_kwargs={
+                "encoding":"utf-8"
+            }
+        )
+
+
+        documents = loader.load()
+
+
+        splitter = RecursiveCharacterTextSplitter(
+            chunk_size=500,
+            chunk_overlap=50
+        )
+
+
+        splits = splitter.split_documents(documents)
+
+
+
+        embeddings = HuggingFaceEmbeddings(
+            model_name="sentence-transformers/all-MiniLM-L6-v2"
+        )
+
+
+        vectorstore = Chroma.from_documents(
+
+            documents=splits,
+
+            embedding=embeddings,
+
+            persist_directory=db_path
+        )
+
+
+    return vectorstore.as_retriever(
+        search_kwargs={"k":3}
+    )
+
+
 
 retriever = initialize_vector_store()
 
-# --- GROQ LLM & PROMPT PIPELINE ---
+
+
+# ---------------- GROQ MODEL ----------------
+
+
 llm = ChatGroq(
+
     groq_api_key=api_key,
+
     model_name="llama-3.3-70b-versatile",
+
     temperature=0.7
 )
 
-# Context contextualization prompt
-contextualize_q_system_prompt = (
-    "Given a chat history and the latest user question which might reference context in the chat history, "
-    "formulate a standalone question which can be understood without the chat history."
-)
-contextualize_q_prompt = ChatPromptTemplate.from_messages([
-    ("system", contextualize_q_system_prompt),
-    MessagesPlaceholder("chat_history"),
-    ("human", "{input}"),
-])
-history_aware_retriever = create_history_aware_retriever(llm, retriever, contextualize_q_prompt)
 
-# System Prompt embodying persona + RAG
-system_prompt = (
-    "You are a digital twin acting as me. Respond strictly adopting my tone, persona, and style.\n"
-    "Follow these strict instructions:\n"
-    "{persona_instructions}\n\n"
-    "Use the following pieces of retrieved context to inform your answer:\n"
-    "{context}"
+
+# ---------------- RAG CHAIN ----------------
+
+
+contextualize_prompt = ChatPromptTemplate.from_messages([
+
+    (
+        "system",
+
+        """
+Given the chat history and latest user question,
+rewrite the question so it can be understood independently.
+"""
+    ),
+
+    MessagesPlaceholder(
+        "chat_history"
+    ),
+
+    (
+        "human",
+        "{input}"
+    )
+])
+
+
+
+history_retriever = create_history_aware_retriever(
+
+    llm,
+
+    retriever,
+
+    contextualize_prompt
 )
+
+
+
+system_prompt = """
+
+You are a digital twin.
+
+Follow these personality rules:
+
+{persona_instructions}
+
+
+Use this retrieved knowledge:
+
+{context}
+
+"""
+
+
 
 qa_prompt = ChatPromptTemplate.from_messages([
-    ("system", system_prompt),
-    MessagesPlaceholder("chat_history"),
-    ("human", "{input}"),
-]).partial(persona_instructions=persona_instructions)
 
-question_answer_chain = create_stuff_documents_chain(llm, qa_prompt)
-rag_chain = create_retrieval_chain(history_aware_retriever, question_answer_chain)
+    (
+        "system",
+        system_prompt
+    ),
 
-# --- CHAT HISTORY & SESSION STATE ---
+    MessagesPlaceholder(
+        "chat_history"
+    ),
+
+    (
+        "human",
+        "{input}"
+    )
+
+]).partial(
+    persona_instructions=persona_instructions
+)
+
+
+
+qa_chain = create_stuff_documents_chain(
+
+    llm,
+
+    qa_prompt
+)
+
+
+
+rag_chain = create_retrieval_chain(
+
+    history_retriever,
+
+    qa_chain
+)
+
+
+
+# ---------------- CHAT MEMORY ----------------
+
+
 if "chat_history" not in st.session_state:
-    st.session_state.chat_history = []
 
-# Display prior chat messages
-for message in st.session_state.chat_history:
-    role = "user" if isinstance(message, HumanMessage) else "assistant"
+    st.session_state.chat_history=[]
+
+
+
+for msg in st.session_state.chat_history:
+
+    role = (
+        "user"
+        if isinstance(msg,HumanMessage)
+        else "assistant"
+    )
+
     with st.chat_message(role):
-        st.markdown(message.content)
 
-# --- USER INPUT & RESPONSE ---
+        st.write(msg.content)
+
+
+
+# ---------------- CHAT ----------------
+
+
 if user_query := st.chat_input("Ask me anything..."):
+
+
     with st.chat_message("user"):
-        st.markdown(user_query)
+
+        st.write(user_query)
+
+
 
     with st.chat_message("assistant"):
-        with st.spinner("Thinking (powered by Groq)..."):
-            response = rag_chain.invoke({
-                "input": user_query,
-                "chat_history": st.session_state.chat_history
-            })
-            
-            answer = response["answer"]
-            st.markdown(answer)
 
-    # Update persistent memory
-    st.session_state.chat_history.append(HumanMessage(content=user_query))
-    st.session_state.chat_history.append(AIMessage(content=answer))
+
+        with st.spinner("Thinking..."):
+
+
+            response = rag_chain.invoke({
+
+                "input":user_query,
+
+                "chat_history":st.session_state.chat_history
+
+            })
+
+
+            answer=response["answer"]
+
+
+            st.write(answer)
+
+
+
+    st.session_state.chat_history.append(
+
+        HumanMessage(content=user_query)
+
+    )
+
+
+    st.session_state.chat_history.append(
+
+        AIMessage(content=answer)
+
+    )
