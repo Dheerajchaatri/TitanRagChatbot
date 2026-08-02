@@ -1,7 +1,7 @@
-streamlit
-langchain
-langchain-community
-langchain-openai
-chromadb
+streamlit==1.38.0
+langchain==0.2.16
+langchain-community==0.2.16
+langchain-openai==0.1.23
+chromadb==0.5.5
 tiktoken
 python-dotenv
