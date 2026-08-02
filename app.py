@@ -1,8 +1,8 @@
 import os
+import shutil
 import streamlit as st
 
 from langchain_community.document_loaders import (
-    DirectoryLoader,
     TextLoader,
     PyPDFLoader
 )
@@ -27,7 +27,6 @@ from langchain.chains.combine_documents import create_stuff_documents_chain
 
 # ================= PAGE CONFIG =================
 
-
 st.set_page_config(
     page_title="Titan Chatbot",
     page_icon="🤖",
@@ -37,31 +36,32 @@ st.set_page_config(
 
 
 
-# ================= UI =================
-
+# ================= UI CSS =================
 
 st.markdown("""
 <style>
 
-/* App background */
 .stApp {
     background-color:#0e1117 !important;
 }
 
 
-/* Heading */
+/* Title */
+
 h1 {
     color:white !important;
 }
 
 
 /* Caption */
+
 .stCaption {
     color:#cbd5e1 !important;
 }
 
 
-/* Chat bubbles */
+/* Chat messages */
+
 [data-testid="stChatMessage"] {
 
     background-color:#1e293b !important;
@@ -80,7 +80,6 @@ h1 {
 }
 
 
-
 /* Chat input */
 
 [data-testid="stChatInput"] {
@@ -92,15 +91,6 @@ h1 {
     border-radius:14px !important;
 
 }
-
-
-
-[data-testid="stChatInput"] > div {
-
-    background-color:#111827 !important;
-
-}
-
 
 
 [data-testid="stChatInput"] textarea {
@@ -116,24 +106,11 @@ h1 {
 }
 
 
-
 [data-testid="stChatInput"] textarea::placeholder {
 
     color:#94a3b8 !important;
 
 }
-
-
-/* Send button */
-
-[data-testid="stChatInputSubmitButton"] button {
-
-    background:#ff5b5b !important;
-
-    color:white !important;
-
-}
-
 
 
 /* Sidebar */
@@ -159,7 +136,6 @@ st.caption(
 
 
 
-
 # ================= API KEY =================
 
 
@@ -182,17 +158,26 @@ with st.sidebar:
 
     if secret_groq_key:
 
-        st.success("Groq API loaded 🔒")
+
+        st.success(
+            "Groq API loaded 🔒"
+        )
 
         api_key = secret_groq_key
 
 
+
     else:
 
+
         api_key = st.text_input(
+
             "Groq API Key",
+
             type="password",
+
             placeholder="gsk_..."
+
         )
 
 
@@ -204,13 +189,19 @@ with st.sidebar:
     # ================= PDF UPLOAD =================
 
 
-    st.subheader("📄 Upload Knowledge PDF")
+    st.subheader(
+        "📄 Upload Knowledge PDF"
+    )
 
 
     uploaded_file = st.file_uploader(
+
         "Upload PDF file",
+
         type=["pdf"]
+
     )
+
 
 
     if uploaded_file:
@@ -220,32 +211,59 @@ with st.sidebar:
 
 
         os.makedirs(
+
             upload_folder,
+
             exist_ok=True
+
         )
 
 
 
         pdf_path = os.path.join(
+
             upload_folder,
+
             uploaded_file.name
+
         )
 
 
 
-        with open(pdf_path, "wb") as f:
+        with open(
+
+            pdf_path,
+
+            "wb"
+
+        ) as f:
+
 
             f.write(
+
                 uploaded_file.getbuffer()
+
             )
 
 
 
-st.success(
-    "PDF uploaded successfully ✅"
-)
+        # Remove old database so new PDF gets indexed
 
-st.cache_resource.clear()
+        if os.path.exists("./chroma_db"):
+
+            shutil.rmtree("./chroma_db")
+
+
+
+        st.cache_resource.clear()
+
+
+
+        st.success(
+
+            "PDF uploaded successfully ✅"
+
+        )
 
 
 
@@ -255,30 +273,44 @@ st.cache_resource.clear()
 
     persona_instructions = st.text_area(
 
+
         "Persona Rules",
+
 
         value="""
 
+
 1. Speak casually with confidence.
+
 2. Keep answers concise.
+
 3. Use natural language.
+
 4. Use retrieved context when answering.
+
 
 """,
 
+
         height=150
+
 
     )
 
 
 
 
+# Stop if API missing
+
 if not api_key:
 
 
     st.info(
+
         "Add your Groq API key in sidebar or Streamlit secrets.",
+
         icon="🔑"
+
     )
 
 
@@ -301,42 +333,67 @@ def initialize_vector_store():
 
 
 
-    # Create folders if missing
+    # Create folders
 
     os.makedirs(
+
         data_path,
+
         exist_ok=True
+
     )
 
 
     os.makedirs(
+
         upload_path,
+
         exist_ok=True
+
     )
 
 
 
-    # Default file if no knowledge exists
+    # Find existing files
 
-    all_files = []
+    documents_files = []
+
 
 
     for root, dirs, files in os.walk(data_path):
 
+
         for file in files:
 
-            all_files.append(
-                os.path.join(root,file)
-            )
+
+            if file.endswith(".txt") or file.endswith(".pdf"):
+
+
+                documents_files.append(
+
+                    os.path.join(root, file)
+
+                )
 
 
 
-    if not all_files:
+    # If no file exists create default knowledge
+
+    if not documents_files:
+
+
+        default_file = os.path.join(
+
+            data_path,
+
+            "about_me.txt"
+
+        )
 
 
         with open(
 
-            f"{data_path}/about_me.txt",
+            default_file,
 
             "w",
 
@@ -353,6 +410,14 @@ def initialize_vector_store():
 
 
 
+        documents_files.append(default_file)
+
+
+
+
+
+    # Embeddings
+
 
     embeddings = HuggingFaceEmbeddings(
 
@@ -363,11 +428,19 @@ def initialize_vector_store():
 
 
 
-    # Load existing database
+    # Load existing Chroma DB
 
- if os.path.exists("./chroma_db"):
-    import shutil
-    shutil.rmtree("./chroma_db")
+    if os.path.exists(db_path):
+
+
+        vectorstore = Chroma(
+
+            persist_directory=db_path,
+
+            embedding_function=embeddings
+
+        )
+
 
 
     else:
@@ -378,62 +451,62 @@ def initialize_vector_store():
 
 
 
-        # Read TXT files
-
-        for root, dirs, files in os.walk(data_path):
+        # Read files
 
 
-            for file in files:
+        for file_path in documents_files:
 
 
 
-                file_path = os.path.join(
-                    root,
-                    file
+            # TXT files
+
+            if file_path.endswith(".txt"):
+
+
+
+                loader = TextLoader(
+
+                    file_path,
+
+                    encoding="utf-8"
+
+                )
+
+
+                documents.extend(
+
+                    loader.load()
+
                 )
 
 
 
-                if file.endswith(".txt"):
+
+            # PDF files
 
 
-                    loader = TextLoader(
-
-                        file_path,
-
-                        encoding="utf-8"
-
-                    )
-
-
-                    documents.extend(
-                        loader.load()
-                    )
+            elif file_path.endswith(".pdf"):
 
 
 
-                # Read PDF files
+                loader = PyPDFLoader(
 
-                elif file.endswith(".pdf"):
+                    file_path
 
-
-                    loader = PyPDFLoader(
-
-                        file_path
-
-                    )
+                )
 
 
-                    documents.extend(
+                documents.extend(
 
-                        loader.load()
+                    loader.load()
 
-                    )
+                )
 
 
 
 
-        # Split documents
+
+        # Split text into chunks
 
 
         splitter = RecursiveCharacterTextSplitter(
@@ -455,6 +528,10 @@ def initialize_vector_store():
 
 
 
+
+        # Create vector database
+
+
         vectorstore = Chroma.from_documents(
 
             documents=splits,
@@ -467,6 +544,8 @@ def initialize_vector_store():
 
 
 
+
+
     return vectorstore.as_retriever(
 
         search_kwargs={
@@ -476,6 +555,7 @@ def initialize_vector_store():
         }
 
     )
+
 
 
 
@@ -510,7 +590,7 @@ contextualize_prompt = ChatPromptTemplate.from_messages([
         """
 Given the chat history and latest user question,
 rewrite the question so it can be understood independently.
-Only use the conversation context.
+Only use conversation context.
 """
 
     ),
@@ -556,8 +636,9 @@ You are a helpful AI assistant.
 
 Answer the user using only the provided knowledge context.
 
-If the answer is not available in the uploaded documents,
-say that you don't have information about it.
+If information is not available in the uploaded documents,
+clearly say that you don't have that information.
+
 
 Personality rules:
 
@@ -576,7 +657,6 @@ Knowledge context:
 qa_prompt = ChatPromptTemplate.from_messages([
 
 
-
     (
 
         "system",
@@ -586,13 +666,11 @@ qa_prompt = ChatPromptTemplate.from_messages([
     ),
 
 
-
     MessagesPlaceholder(
 
         "chat_history"
 
     ),
-
 
 
     (
@@ -604,12 +682,12 @@ qa_prompt = ChatPromptTemplate.from_messages([
     )
 
 
-
 ]).partial(
 
     persona_instructions=persona_instructions
 
 )
+
 
 
 
@@ -621,6 +699,7 @@ qa_chain = create_stuff_documents_chain(
     qa_prompt
 
 )
+
 
 
 
@@ -649,11 +728,10 @@ if "chat_history" not in st.session_state:
 
 
 
-# Display old messages
+# Show previous messages
 
 
 for msg in st.session_state.chat_history:
-
 
 
     role = (
@@ -665,7 +743,6 @@ for msg in st.session_state.chat_history:
         else "assistant"
 
     )
-
 
 
     with st.chat_message(role):
@@ -687,6 +764,10 @@ if user_query := st.chat_input(
 ):
 
 
+
+    # User message
+
+
     with st.chat_message("user"):
 
 
@@ -696,8 +777,10 @@ if user_query := st.chat_input(
 
 
 
-    with st.chat_message("assistant"):
+    # AI response
 
+
+    with st.chat_message("assistant"):
 
 
         with st.spinner("Thinking..."):
@@ -721,14 +804,13 @@ if user_query := st.chat_input(
 
 
 
-
             st.write(answer)
 
 
 
 
 
-    # Save messages
+    # Save chat history
 
 
     st.session_state.chat_history.append(
