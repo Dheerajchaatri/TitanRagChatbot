@@ -1,3 +1,5 @@
+# PART 1
+
 import os
 import shutil
 import streamlit as st
@@ -316,6 +318,9 @@ if not api_key:
 
     st.stop()
 
+# PART 2
+
+
 # ================= VECTOR DATABASE =================
 
 
@@ -561,6 +566,9 @@ def initialize_vector_store():
 
 
 retriever = initialize_vector_store()
+
+# PART 3
+
 
 # ================= GROQ MODEL =================
 
