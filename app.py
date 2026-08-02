@@ -19,7 +19,7 @@ from langchain.chains import (
 from langchain.chains.combine_documents import create_stuff_documents_chain
 
 
-# ---------------- PAGE CONFIG ----------------
+# ================= PAGE CONFIG =================
 
 st.set_page_config(
     page_title="Titan Chatbot",
@@ -29,34 +29,38 @@ st.set_page_config(
 )
 
 
-# ---------------- CUSTOM UI ----------------
+
+# ================= UI CSS FIX =================
 
 st.markdown("""
 <style>
 
 /* Background */
 .stApp {
-    background-color:#0e1117;
+    background-color:#0e1117 !important;
 }
 
 
 /* Heading */
 h1 {
-    color:white !important;
+    color:#ffffff !important;
 }
 
 
+/* Caption */
 .stCaption {
     color:#cbd5e1 !important;
 }
 
 
-/* Chat bubbles */
+/* Chat messages */
 [data-testid="stChatMessage"] {
 
     background-color:#1e293b !important;
-    border-radius:14px;
-    padding:12px;
+
+    border-radius:14px !important;
+
+    padding:12px !important;
 
 }
 
@@ -64,30 +68,50 @@ h1 {
 /* Chat text */
 [data-testid="stChatMessage"] p {
 
-    color:white !important;
-    font-size:16px;
+    color:#ffffff !important;
 
 }
 
 
-/* User input box */
+
+/* ================= INPUT BOX ================= */
+
+
+/* Outer box */
 [data-testid="stChatInput"] {
 
-    background-color:#1e293b !important;
+    background-color:#111827 !important;
+
     border:1px solid #475569 !important;
-    border-radius:14px;
+
+    border-radius:14px !important;
 
 }
 
 
-/* Input typed text */
+
+/* Inner div */
+[data-testid="stChatInput"] > div {
+
+    background-color:#111827 !important;
+
+}
+
+
+
+/* Actual textarea */
 [data-testid="stChatInput"] textarea {
 
-    color:white !important;
-    caret-color:white !important;
-    font-size:16px !important;
+    background-color:#111827 !important;
+
+    color:#ffffff !important;
+
+    -webkit-text-fill-color:#ffffff !important;
+
+    caret-color:#ffffff !important;
 
 }
+
 
 
 /* Placeholder */
@@ -98,23 +122,26 @@ h1 {
 }
 
 
+
 /* Send button */
 [data-testid="stChatInputSubmitButton"] button {
 
-    background:#ff5b5b !important;
+    background-color:#ff5b5b !important;
+
     color:white !important;
-    border-radius:10px;
+
+    border-radius:10px !important;
 
 }
+
 
 
 /* Sidebar */
 section[data-testid="stSidebar"] {
 
-    background:#111827;
+    background:#111827 !important;
 
 }
-
 
 </style>
 """, unsafe_allow_html=True)
@@ -129,7 +156,7 @@ st.caption(
 
 
 
-# ---------------- API KEY ----------------
+# ================= API KEY =================
 
 
 try:
@@ -143,6 +170,7 @@ except:
 
 
 with st.sidebar:
+
 
     st.header("⚙️ Configuration")
 
@@ -194,7 +222,7 @@ if not api_key:
 
 
 
-# ---------------- VECTOR DATABASE ----------------
+# ================= VECTOR DATABASE =================
 
 
 @st.cache_resource(show_spinner="Building knowledge base...")
@@ -204,6 +232,7 @@ def initialize_vector_store():
 
 
     data_path="./data"
+
     db_path="./chroma_db"
 
 
@@ -214,11 +243,7 @@ def initialize_vector_store():
 
 
 
-    files=os.listdir(data_path)
-
-
-
-    if not files:
+    if not os.listdir(data_path):
 
         with open(
             f"{data_path}/about_me.txt",
@@ -241,7 +266,6 @@ def initialize_vector_store():
 
 
     if os.path.exists(db_path):
-
 
         vectorstore = Chroma(
 
@@ -283,6 +307,7 @@ def initialize_vector_store():
         )
 
 
+
         splits = splitter.split_documents(documents)
 
 
@@ -309,9 +334,7 @@ def initialize_vector_store():
 
 retriever = initialize_vector_store()
 
-
-
-# ---------------- GROQ MODEL ----------------
+# ================= GROQ MODEL =================
 
 
 llm = ChatGroq(
@@ -326,7 +349,7 @@ llm = ChatGroq(
 
 
 
-# ---------------- RAG ----------------
+# ================= RAG CHAIN =================
 
 
 contextualize_prompt = ChatPromptTemplate.from_messages([
@@ -335,8 +358,8 @@ contextualize_prompt = ChatPromptTemplate.from_messages([
         "system",
 
         """
-Given chat history and latest question,
-rewrite the question clearly.
+Given the chat history and latest user question,
+rewrite the question so it can be understood independently.
 """
     ),
 
@@ -369,12 +392,12 @@ system_prompt = """
 
 You are a digital twin.
 
-Follow these rules:
+Follow these personality rules:
 
 {persona_instructions}
 
 
-Use this knowledge:
+Use this retrieved knowledge:
 
 {context}
 
@@ -406,7 +429,7 @@ qa_prompt = ChatPromptTemplate.from_messages([
 
 
 
-qa_chain=create_stuff_documents_chain(
+qa_chain = create_stuff_documents_chain(
 
     llm,
 
@@ -416,7 +439,7 @@ qa_chain=create_stuff_documents_chain(
 
 
 
-rag_chain=create_retrieval_chain(
+rag_chain = create_retrieval_chain(
 
     history_retriever,
 
@@ -426,19 +449,29 @@ rag_chain=create_retrieval_chain(
 
 
 
-# ---------------- MEMORY ----------------
+# ================= CHAT MEMORY =================
 
 
 if "chat_history" not in st.session_state:
 
-    st.session_state.chat_history=[]
+    st.session_state.chat_history = []
 
 
+
+# Show previous messages
 
 for msg in st.session_state.chat_history:
 
 
-    role="user" if isinstance(msg,HumanMessage) else "assistant"
+    role = (
+
+        "user"
+
+        if isinstance(msg, HumanMessage)
+
+        else "assistant"
+
+    )
 
 
     with st.chat_message(role):
@@ -447,17 +480,21 @@ for msg in st.session_state.chat_history:
 
 
 
-# ---------------- CHAT ----------------
+# ================= CHAT INPUT =================
 
 
 if user_query := st.chat_input("Ask me anything..."):
 
+
+    # User message
 
     with st.chat_message("user"):
 
         st.write(user_query)
 
 
+
+    # AI response
 
     with st.chat_message("assistant"):
 
@@ -467,19 +504,21 @@ if user_query := st.chat_input("Ask me anything..."):
 
             response = rag_chain.invoke({
 
-                "input":user_query,
+                "input": user_query,
 
-                "chat_history":st.session_state.chat_history
+                "chat_history": st.session_state.chat_history
 
             })
 
 
-            answer=response["answer"]
+            answer = response["answer"]
 
 
             st.write(answer)
 
 
+
+    # Save memory
 
     st.session_state.chat_history.append(
 
