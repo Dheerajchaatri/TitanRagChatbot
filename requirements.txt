@@ -12,8 +12,5 @@ chromadb
 
 pypdf
 
-torch
-torchvision
-
 python-dotenv
 tiktoken
