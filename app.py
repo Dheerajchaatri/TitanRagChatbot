@@ -435,7 +435,7 @@ def initialize_vector_store():
 
     # Load existing Chroma DB
 
-    if os.path.exists(db_path):
+    if os.path.exists(db_path) and os.listdir(db_path):
 
 
         vectorstore = Chroma(
