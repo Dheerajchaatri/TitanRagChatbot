@@ -6,9 +6,11 @@ from langchain_community.vectorstores import Chroma
 from langchain_openai import OpenAIEmbeddings, ChatOpenAI
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 
-# --- FIXED IMPORTS ---
-from langchain.chains.history_aware_retriever import create_history_aware_retriever
-from langchain.chains.retrieval import create_retrieval_chain
+# --- CORRECT LANGCHAIN IMPORTS ---
+from langchain.chains import (
+    create_history_aware_retriever,
+    create_retrieval_chain,
+)
 from langchain.chains.combine_documents import create_stuff_documents_chain
 
 from langchain_core.messages import HumanMessage, AIMessage
