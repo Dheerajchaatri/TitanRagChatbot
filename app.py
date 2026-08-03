@@ -370,6 +370,8 @@ def initialize_vector_store():
 
         shutil.rmtree(db_path)
 
+os.makedirs(db_path, exist_ok=True)
+
     vectorstore = Chroma.from_documents(
 
         documents=splits,
