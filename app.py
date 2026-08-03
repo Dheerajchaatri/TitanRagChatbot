@@ -11,7 +11,9 @@ from langchain_text_splitters import (
     RecursiveCharacterTextSplitter
 )
 
-from langchain_chroma import Chroma
+from langchain_community.vectorstores import (
+    Chroma
+)
 
 from langchain_huggingface import (
     HuggingFaceEmbeddings
@@ -39,19 +41,6 @@ from langchain.chains import (
 from langchain.chains.combine_documents import (
     create_stuff_documents_chain
 )
-
-
-# =====================================================
-# PAGE CONFIG
-# =====================================================
-
-st.set_page_config(
-    page_title="Titan RAG Chatbot",
-    page_icon="🤖",
-    layout="centered",
-    initial_sidebar_state="expanded"
-)
-
 
 # =====================================================
 # CUSTOM CSS
