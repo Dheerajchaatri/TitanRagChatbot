@@ -707,35 +707,29 @@ if user_query := st.chat_input(
 
 
 
-    with st.chat_message("assistant"):
+ with st.chat_message("assistant"):
 
+    with st.spinner("Thinking..."):
 
-
-        with st.spinner("Thinking..."):
-
-
+        try:
 
             response = rag_chain.invoke({
 
-
                 "input": user_query,
-
 
                 "chat_history": st.session_state.chat_history
 
-
             })
-
-
 
             answer = response["answer"]
 
-
-
-
             st.write(answer)
 
+        except Exception as e:
 
+            st.error(f"Error: {e}")
+
+            answer = "An error occurred while generating the response."
 
 
 
